@@ -1,0 +1,235 @@
+\documentclass[UTF8,a4paper,10pt]{ctexart}
+\usepackage{ctex}
+\usepackage{amsmath}
+\usepackage{fontspec}
+\usepackage{multicol}
+\usepackage{newtxtext,newtxmath}
+\usepackage{bm}
+\setlength{\parindent}{2em}
+\CTEXsetup[format={\Large\bfseries}]{section}
+\title{\textbf{电动力学课程数值计算报告}}
+\author{\textit{王睿杰} 2017141475035}
+\date{\today}
+\begin{document}
+\begin{multicols}{2}
+    [\maketitle]
+    \section{绪论}
+        目前物理大致分为三大部分：理论、实验和计算。对于普通本科生，主要以理论课为主，实验课为辅，而计算除了专设一门计算物理课程外，通常是通过伴随课程布置数值计算作业来学习。\par
+        数值分析是分析的一个重要分支，指在数学分析问题中对数值近似（相对于一般化的符号运算）算法的研究。巴比伦泥板YBC 7289是关于数值分析的最早数学作品之一，它给出了$\sqrt {2}$在六十进制下的一个数值逼近，$\sqrt {2}$是一个边长为1的正方形的对角线，在公元前1800年巴比伦人也已在巴比伦泥板上计算勾股数$(3,4,5)$，即直角三角形的三边长比。\par
+        数值分析延续了实务上数学计算的传统。巴比伦人利用巴比伦泥板计算 $\sqrt {2}$的近似值，而不是精确值。在许多实务的问题中，精确值往往无法求得，或是无法用有理数表示（如$\sqrt {2}$）。数值分析的目的不在求出正确的答案，而是在其误差在一合理范围的条件下找到近似解。\par
+        在所有工程及科学的领域中都会用到数值分析。像天体力学研究中会用到常微分方程，电动力学中会使用偏微分方程组，最优化会用在资产组合管理中，数值线性代数是资料分析中重要的一部分，而随机微分方程及马尔可夫链是在医药或生物学中生物细胞模拟的基础。\par
+        在计算机发明之前，数值分析主要是依靠大型的函数表及人工的内插法，但在二十世纪中被电脑的计算所取代。不过电脑的内插算法仍然是数值分析软件中重要的一部分。\par
+    \section{原理}
+        \subsection{电动力学原理}
+        在电动力学中，最重要的是麦克斯韦方程组，由四个偏微分方程组成：
+        \begin{equation}
+            \left\{ \begin{array}{l}
+                \nabla \times \bm{E} = -\frac{\partial \bm{B}}{\partial t}\\
+                \nabla \times \bm{B} = \mu \bm{J}+\mu \varepsilon \frac{\partial \bm{E}}{\partial t}\\
+                \nabla \cdot \bm{E} = \frac{\rho}{\varepsilon}\\
+                \nabla \cdot \bm{B} = 0
+            \end{array}\right.
+        \end{equation}
+        式中$\nabla = (\frac{\partial}{\partial x},\frac{\partial}{\partial y},\frac{\partial}{\partial z})$为矢量微分算符，$\bm{E},\bm{B}$分别为电场和磁场，$\varepsilon,\mu$为介电常数和磁导率。\par
+        在真空中介电常数和磁导率表示为$\varepsilon_0$和$\mu_0$，在介质中有：
+        \begin{equation}
+            \begin{array}{c}
+                \bm{D} = \varepsilon \bm{E}\\
+                \bm{B} = \mu \bm{H}
+            \end{array}
+        \end{equation}
+        如果将两个旋度表达式表示为分量的形式就会变为八个方程。此外在导电物质中还有欧姆定律：
+        \begin{equation}
+            \bm{J} = \sigma \bm{E}
+        \end{equation}
+        式中$\sigma$为电导率。\par
+        麦克斯韦方程组主要描述了电磁场的性质，而动力学主要是牛顿运动方程：
+        \begin{equation}
+            \bm{F} = m\stackrel{..}{\bm{r}}
+        \end{equation}
+        式中$F$为质点所受合外力，$m$为质点的惯性质量，$\stackrel{..}{\bm{r}}$为质点矢径对于时间的二阶导数。\par
+        电荷在电磁场中受洛伦兹力的作用：
+        \begin{equation}
+            \bm{F} = q(\bm{E}+\bm{v}\times\bm{B})
+        \end{equation}
+        式中$q$为电荷量，$\bm{E}$和$\bm{b}$分别为电场和磁场，$\bm{v}$为电荷速度。\par
+        电荷在引力场中受力用万有引力定律描述：
+        \begin{equation}
+            \bm{G} = G\frac{m_1m_2}{|\vec r|^3}\vec r
+        \end{equation}
+        式中$G$为万有引力常数，$m_1,m_2$分别为两个质点的引力质量，$\vec r$为两个质点矢径之差，其模长等于两个质点之间的距离。\par
+        有了这几个公式，从理论上来讲我们可以解决一切的经典物理问题，实际上在19世纪末期科学家们大多是这么乐观地认为的，但还是有一些问题，就是开尔文所谓的“两朵乌云”，之后有了相对论和量子力学。但是对于宏观低速的物体经典力学仍然有相当高的精度。\par
+        \subsection{数值分析原理}
+        由以上方程可以看出最主要的计算是进行微积分计算和求解微分方程。
+            \subsubsection{导数}
+            微积分中函数的导数定义为：
+            \begin{equation}
+                f'(x) = \lim_{h\to 0}\frac{f(x+h)-f(x)}{h}
+            \end{equation}
+            数值分析中，我们对微分公式利用泰勒展开进行离散化得到有限差分公式：
+            \begin{equation}\label{eq:1}
+                f'(x) = \frac{f(x+h)-f(x)}{h} - \frac{h}{2}f''(c)
+            \end{equation}
+            其中$c$是介于$x$和$x+h$间的一个数。\par
+            将\eqref{eq:1}与导数的定义式相比较发现当$h\to 0$时有限差分公式就变成了导数的计算式。尽管在数值计算中不能取$h\to 0$的极限，但是当$h$非常小的时候我们认为
+            \begin{equation}
+                f'(x) \approx \frac{f(x+h)-f(x)}{h}
+            \end{equation}
+            通过对比我们发现\eqref{eq:1}是用两点的割线代替了切线，也被称为二点前向差分公式，并且把\eqref{eq:1}的最后一项看作误差。由于误差与$h$成正比，因此称\eqref{eq:1}为近似一阶导数的一阶方法。一般地，如果误差是$O(h^n)$，那么我们称该公式为$n$阶方法。\par
+            采取不同形式的泰勒展开，我们也能得到其他的差分公式，如三点中心差分公式：
+            \begin{footnotesize}
+                \begin{equation}
+                    f'(x) = \frac{f(x+h)-f(x-h)}{2h} - \frac{h^2}{6}f'''(c)
+                \end{equation}
+            \end{footnotesize}
+            其中$x-h < c < x+h$。可以看出三点中心差分公式是一个二阶公式。\par
+            对于二阶导数，也有二阶导数的三点中心差分公式：
+            \begin{footnotesize}
+                \begin{equation}
+                    \begin{split}
+                        f''(x) = &\frac{f(x+h)-2f(x)+f(x-h)}{h^2}\\
+                        &-\frac{h^2}{12}f^{(4)}(c)
+                    \end{split}
+                \end{equation}
+            \end{footnotesize}
+            同样地$x-h < c < x+h$。\par
+            我们可以用理查德森外推到$n$阶公式，但在这里不再叙述
+            \subsubsection{定积分}
+            若我们将区间$[a,b]$分成$n$个小区间，定义$\lambda = max\{\Delta x_i\}$，定积分的定义如下：
+            \begin{equation}
+                \int_{a}^{b}f(x)dx = \lim_{\lambda\to 0}\sum_{i=0}^{n}f(\xi_i)\Delta x_i
+            \end{equation}\par
+            模仿对导数的操作进行离散化，我们可以用矩形或梯形来计算曲边梯形的面积，显然梯形的近似效果要更好，如此我们得到复合梯形法则：
+            \begin{footnotesize}
+                \begin{equation}
+                    \begin{split}
+                        \int_a^b f(x)dx = &\frac{h}{2}(y_0+y_m+2\sum_{i=1}^{m-1}yx_i)\\
+                        &-\frac{(b-a)h^2}{12}f''(c)
+                    \end{split}
+                \end{equation}
+            \end{footnotesize}
+            其中$h = \frac{(b-a)}{m}$$c$在$x_0$到$x_1$之间，可以看出这是一个二阶方法。\par
+            更高阶的有复合辛普森公式，用三点进行抛物线的插值代替了梯形法则中的直线：
+            \begin{footnotesize}
+                \begin{equation}
+                    \begin{split}
+                        \int_a^b f(x)dx = &\frac{h}{3}(y_0+y_{2m}+4\sum_{i=1}^{m}y_{2i-1}\\
+                        &+2\sum_{i=1}^{m-1}y_{2i})\\
+                        &-\frac{(b-a)h^4}{180}f^{(4)}(c)
+                    \end{split}
+                \end{equation}
+            \end{footnotesize}
+            其中$c$在$x_0$到$x_1$之间，复合辛普森公式是一个四阶方法。\par
+            遇到反常积分或瑕积分通常需要在开区间上积分，此时取中点则有复合中点法则：
+            \begin{footnotesize}
+                \begin{equation}
+                    \begin{split}
+                        \int_a^b f(x)dx = &h\sum_{i=1}^{m}f(\omega_i)\\
+                        &+\frac{(b-a)h^2}{24}f''(c)
+                    \end{split}
+                \end{equation}
+            \end{footnotesize}
+            其中$h = \frac{(b-a)}{m}$$c$在$x_0$到$x_1$之间，$\omega_i$是$[a,b]$中$m$个相等子区间的中点，复合中点法则是三阶方法。\par
+            和求导一样，我们也可以利用龙贝格积分外推到$n$阶公式：
+            \begin{footnotesize}
+                \begin{equation}
+                        R_{11} = \frac{h}{2}(f(a)+f(b))
+                \end{equation}
+            \end{footnotesize}
+            \begin{footnotesize}
+                \begin{equation}\label{eq:2}
+                    R_{j1} = \frac{1}{2}R_{i-1,1} + h_j\sum_{i=1}^{2^{j-2}}f(a+(2i-1)h_j)
+                \end{equation}
+            \end{footnotesize}
+            \begin{footnotesize}
+                \begin{equation}\label{eq:3}
+                    R_{jk} = \frac{4^{k-1}R_{j,k-1}-R_{j-1,k-1}}{4^{k-1}-1}
+                \end{equation}
+            \end{footnotesize}
+            只需要不断循环\eqref{eq:2}和\eqref{eq:3}便可以生成一个下三角矩阵，$R_{jj}$的数值对应$2j$阶近似。
+            \subsubsection{常微分方程}
+            牛顿运动方程是一个二阶常微分方程（Ordinay Differential Equation，简称ODE），只要我们能求解出运动轨迹的方程，就能计算出质点任意时刻的位置、速度、加速度等信息。求解微分方程可以看作在斜率场内顺着斜率画出一条轨迹，但通常这样的轨迹有无数条，因此我们需要一个初始值来确定一条轨迹，这类问题称为初值问题（IVP）。\par
+            我们同样使用有限差分法，利用折线代替曲线，只要折线足够短且误差积累不多，通常与真实曲线误差不大,设一阶微分方程：
+            \begin{equation}
+                \left\{ \begin{array}{l}
+                    \frac{dy}{dt} = f(t,y)\\
+                    f(t_0) = y_0
+                \end{array}\right.
+            \end{equation}
+            则有欧拉方法：
+            \begin{equation}
+                \begin{split}
+                    \omega_0 =& y_0\\
+                    \omega_{i+1} =& \omega_i + hf(t_i,\omega_i)
+                \end{split}
+            \end{equation}
+            $\omega_i$是欧拉方法估计的$y_i$值，可以证明欧拉方法是一阶方法，并且函数单调时误差会积累。\par
+            只需要对欧拉方法的公式做一个小调整，就可以对精度有很大的提高：
+            \begin{small}
+                \begin{equation}
+                    \begin{split}
+                        \omega_0 =& y_0\\
+                        \omega_{i+1} =& \omega_i + \frac{h}{2}(f(t_i,\omega_i)\\
+                        &+f(t_i+h,\omega_i+hf(ti,\omega_i)))
+                    \end{split}
+                \end{equation}
+            \end{small}
+            这种方法被称为梯形方法。\par
+            由于欧拉方法和梯形方法都可以用旧估计值通过显式公式确定，因此被称为显式方法。也有诸如后向欧拉方法和隐式梯形法等隐式方法，对于一个具体的微分方程可以显化成一个可以迭代的显式表达式，目前不需要使用这些方法，暂时不提。\par
+            龙格-库塔方法是一组ODE求解器，包含欧拉方法和梯形方法，以及更复杂的高阶方法。中点方法类似梯形方法，不同的是梯形方法使用区间的右端使用欧拉方法求值，然后与左端取平均值作为斜率；而中点法则使用区间中点的斜率来代替。最常见的龙格-库塔方法是四阶方法（RK4）：
+            \begin{equation}
+                    \omega_{i+1} = \omega_i + \frac{h}{6}(s_1+2s_2+2s_3+s_4)
+            \end{equation}
+            其中
+            \begin{equation*}
+                \begin{array}{l}
+                    s_1 = f(t_i,\omega_i)\\
+                    s_2 = f(t_i+\frac{h}{2},\omega_i+\frac{h}{2}s_1)\\
+                    s_3 = f(t_i+\frac{h}{2},\omega_i+\frac{h}{2}s_2)\\
+                    s_4 = f(t_i+h,\omega_i+hs_3)
+                \end{array}
+            \end{equation*}
+            这种方法本身简单并且易于编程实现，因此非常流行。\par
+            与IVP对应的还有边值问题（BVP），通常是高阶微分方程，例如牛顿运动方程。如果是一阶偏微分方程，只能给出解的初值，而二阶以上的微分方程则可以给出解的两个边值，而不是解的初值和其一阶导数的初值。对于牛顿运动方程，如果我们给出质点的初位矢和初速度，那么这就是一个IVP，而如果我们给出两个时刻位矢的值，这时就是一个BVP。\par
+            最简单的BVP求解是使用打靶方法，即我们不知道一阶导数的初值，于是假设一个初值而计算同一时间真实位矢与求解出来的位矢之差，当它们相等时我们就求出了正确的解。BVP可能会有不唯一的解，这在IVP中是很少见的，诸如抛体运动，在已知初末位置时，有在$\frac{\pi}{4}$两侧的两个解。
+            \subsubsection{偏微分方程}
+            麦克斯韦方程组是一个偏微分方程（Partial Differential Equation，简称PDE）组，和常微分方程有很多不一样的地方。\par
+            若以两个变量的偏微分方程举例,二阶线性偏微分方程组可以表示为：
+            \begin{scriptsize}\label{eq:4}
+                \begin{equation}
+                    Au_{xx} + Bu_{xy} + Cu_{yy} + F(u_x,u_y,u,x,y) = 0
+                \end{equation}
+            \end{scriptsize}
+            其中偏导数使用下标$x$和$y$表示对应的独立变量，$u$表示解。在热方程或波动方程中有一个变量表示时间，我们倾向于称独立变量为$x$和$t$。实际物理问题应该看作一个四维的偏微分方程，四个独立变量分别为$x,y,z,t$，但是如果要绘制成图最多绘制成三维图像，并且用不同颜色来表示该点的数值大小，并且这样绘制出来的图并不适合展示在平面上。因此之后我们求解的偏微分方程至多只有两个独立变量，尽管更高阶的解法同样存在。\par
+            根据\eqref{eq:4}中主导阶项，可以按解的性质完全不同而分类如下：\par
+            1）$B^2 - 4AC = 0$，抛物线方程\par
+            2）$B^2 - 4AC > 0$，双曲线方程\par
+            3）$B^2 - 4AC < 0$，椭圆方程\par
+            抛物线方程的形式通常被称为热方程或扩散方程：
+            \begin{equation}
+                \frac{\partial u}{\partial t} = D\nabla^2 u
+            \end{equation}
+            $D$为扩散系数，通常是常数。扩散方程可以直接由连续性方程导出。\par
+            双曲线方程的形式通常被称为波动方程：
+            \begin{equation}
+                \frac{\partial^2u}{\partial t^2} = c^2\nabla^2 u
+            \end{equation}
+            $c$为波速。电磁波的波动方程可以直接由麦克斯韦方程组直接推导出。\par
+            椭圆方程的形式通常被称为泊松方程：
+            \begin{equation}
+                \nabla^2 u = f
+            \end{equation}
+            特别地，当$f=0$，泊松方程退化成拉普拉斯方程，拉普拉斯方程的解称为调和函数。\par
+            泊松方程在物理中有许多应用，也是本次作业之一，其解表示势能。电场$\bm{E}$是电势$\phi$的负梯度：
+            \begin{equation}
+                \bm{E} = -\nabla\phi
+            \end{equation}
+            再代入麦克斯韦方程组的电场散度式可以得到势能$\phi$的泊松方程：
+            \begin{equation}
+                \partial^2\phi = -\frac{\rho}{\varepsilon}
+            \end{equation}
+            重力势能也可以表示为与密度有关的泊松方程，稳态的热分布则可以表示为拉普拉斯方程。\par
+            根据作业要求只介绍椭圆方程的PDE求解器。对于椭圆方程，主要是有限差分方法和有限元方法两种方法。有限元分析使用非常广泛，诸如计算流体力学等都有应用，但在这次作业中我只使用了有限差分方法，因此着重介绍有限差分方法。\par
+            之前在边值问题中已经使用过有限差分方法了，实际上对于偏微分方程同样适用，而对于二维的椭圆方程，我们就需要在两个方向
+\end{multicols}
+\end{document}
