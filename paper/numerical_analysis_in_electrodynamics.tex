@@ -4,8 +4,11 @@
 \usepackage{fontspec}
 \usepackage{multicol}
 \usepackage{newtxtext,newtxmath}
+\usepackage{geometry}
 \usepackage{bm}
+\usepackage{listings}
 \setlength{\parindent}{2em}
+\geometry{a4paper,left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
 \CTEXsetup[format={\Large\bfseries}]{section}
 \title{\textbf{电动力学课程数值计算报告}}
 \author{\textit{王睿杰} 2017141475035}
@@ -18,134 +21,284 @@
         数值分析是分析的一个重要分支，指在数学分析问题中对数值近似（相对于一般化的符号运算）算法的研究。巴比伦泥板YBC 7289是关于数值分析的最早数学作品之一，它给出了$\sqrt {2}$在六十进制下的一个数值逼近，$\sqrt {2}$是一个边长为1的正方形的对角线，在公元前1800年巴比伦人也已在巴比伦泥板上计算勾股数$(3,4,5)$，即直角三角形的三边长比。\par
         数值分析延续了实务上数学计算的传统。巴比伦人利用巴比伦泥板计算 $\sqrt {2}$的近似值，而不是精确值。在许多实务的问题中，精确值往往无法求得，或是无法用有理数表示（如$\sqrt {2}$）。数值分析的目的不在求出正确的答案，而是在其误差在一合理范围的条件下找到近似解。\par
         在所有工程及科学的领域中都会用到数值分析。像天体力学研究中会用到常微分方程，电动力学中会使用偏微分方程组，最优化会用在资产组合管理中，数值线性代数是资料分析中重要的一部分，而随机微分方程及马尔可夫链是在医药或生物学中生物细胞模拟的基础。\par
-        在计算机发明之前，数值分析主要是依靠大型的函数表及人工的内插法，但在二十世纪中被电脑的计算所取代。不过电脑的内插算法仍然是数值分析软件中重要的一部分。\par
+        在计算机发明之前，数值分析主要是依靠大型的函数表及人工的内插法，十九世纪英国数学家查尔斯·巴贝奇曾经设计过用于计算的机械计算机——差分机与分析机，但因工艺所限没有完全实现，二十世纪电子计算机被发明，被大量运用于数值计算。计算机的内插算法仍然是数值分析软件中重要的一部分。\par
     \section{原理}
         \subsection{电动力学原理}
-        在电动力学中，最重要的是麦克斯韦方程组，由四个偏微分方程组成：
+        微积分在物理学中有十分重要的作用，我们可以用微积分语言来描述物理学定律，假设我们已经有了关于微积分的基本知识，在电动力学中，有几个基本的实验定律：\par
+        电磁理论最基本的实验定律是电荷守恒定律，电荷是粒子的基本属性，无论发生什么过程，一个系统的总电荷严格保持不变。电荷守恒定律在数学上用电荷连续性方程表示，设任意区域$V$，其边界为闭合曲面$S$，则有
         \begin{equation}
-            \left\{ \begin{array}{l}
-                \nabla \times \bm{E} = -\frac{\partial \bm{B}}{\partial t}\\
-                \nabla \times \bm{B} = \mu \bm{J}+\mu \varepsilon \frac{\partial \bm{E}}{\partial t}\\
-                \nabla \cdot \bm{E} = \frac{\rho}{\varepsilon}\\
-                \nabla \cdot \bm{B} = 0
+            \oint_S\bm{J}\cdot {\rm d}\bm{S} = -\int_V\frac{\partial\rho}{\partial t}{\rm d}V
+        \end{equation}
+        这是电荷守恒定律的积分形式，应用高斯公式
+        \begin{equation*}
+            \oint_S\bm{J}\cdot {\rm d}\bm{S} = \int_V\nabla\cdot\bm{J}{\rm d}V
+        \end{equation*}
+        即可得到微分形式
+        \begin{equation}\label{continuity equation}
+            \nabla\cdot\bm{J} + \frac{\partial\rho}{\partial t}= 0
+        \end{equation}
+        式中$\nabla = (\frac{\partial}{\partial x},\frac{\partial}{\partial y},\frac{\partial}{\partial z})$为矢量微分算符。上式被称为电流连续性方程，是电荷守恒定律的微分形式。\par
+        库仑定律也是静电问题的基本实验定律，表述为：真空中静止点电荷$Q_1$对另一个点电荷$Q_2$的作用力$\bm{F}$为
+        \begin{equation}\label{Coulomb}
+            \bm{F} = \frac{Q_1Q_2}{4\pi\varepsilon_0r^3}\bm{r}
+        \end{equation}
+        式中$\bm{r}$为从$Q_1$指向$Q_2$的径矢，$\varepsilon_0$为真空电容率也就是真空介电常数。\par
+        库仑定律仅给出了点电荷间作用力的大小与方向，并没有对原理进行解释，经过后来的研究表明电荷之间通过电场相互作用，点电荷所受力$\bm{F}$等于电荷量$q$和该点电场$\bm{E}$的乘积
+        \begin{equation}
+            \bm{F} = q\bm{E}
+        \end{equation}
+        由库仑定律\eqref{Coulomb}式可得到静止点电荷$Q$激发的电场强度为
+        \begin{equation}
+            \bm{E} = \frac{Q}{4\pi\varepsilon_0r^3}\bm{r}
+        \end{equation}
+        由实验得知电场满足叠加原理，如果空间中存在多个点电荷则一点电场强度等于每个电荷单独存在时产生的电场的和
+        \begin{equation}
+            \bm{E} = \sum_i\frac{Q_i}{4\pi\varepsilon_0r_i^3}\bm{r_i}
+        \end{equation}
+        在许多时候电荷连续分布在某一区域，取该区域内一体积元${\rm d}V$，该体积元的电荷满足
+        \begin{equation*}
+            {\rm d}Q = \rho{\rm d}V
+        \end{equation*}
+        式中$\rho$为电荷密度。\par
+        根据上式，对整个电荷区域进行积分则得到空间中一点的电场为
+        \begin{equation}
+            \bm{E}=\frac{1}{4\pi\varepsilon_0}\int_V\frac{\rho\bm{r}}{r^3}{\rm d}V
+        \end{equation}
+        按照理查德·费恩曼所说，给定了电荷，电场只需要通过计算这一项复杂的三重积分的工作就能得到，“严格说来，是一项计算机的工作！”。\par
+        定义穿过闭合曲面$S$的电场$\bm{E}$的通量为面积分
+        \begin{equation*}
+            \oint_S\bm{E}\cdot{\rm d}\bm{S}
+        \end{equation*}
+        式中${\rm d}\bm{S}$为面元。可以由库仑定律推导出
+        \begin{equation}
+            \oint_S\bm{E}\cdot{\rm d}\bm{S} = \frac{1}{\varepsilon_0}\int_V\rho{\rm d}V
+        \end{equation}
+        上式被称为高斯定律或高斯定理。\par
+        安培力定律是描述恒定电流相互作用的实验定律，可以仿照对库仑定律的操作，定义电流元$I{\rm d}\bm{l}$在磁场中所受到的力为
+        \begin{equation}
+            \bm{F}=I{\rm d}\bm{l}\times\bm{B}
+        \end{equation}
+        $\bm{B}$为该点的磁场。\par
+        静磁学中另一个基本实验定律是毕奥-萨伐尔定律，设$\bm{J}$为源点电流密度
+        \begin{equation}
+            \bm{B}=\frac{\mu_0}{4\pi}\int_V\frac{\bm{J}\times\bm{r}}{r^3}dV
+        \end{equation}
+        同样我们可以定义沿闭合曲线$L$的磁场$\bm{B}$的环流量为线积分
+        \begin{equation*}
+            \oint_L\bm{B}\cdot{\rm d}\bm{l}
+        \end{equation*}
+        式中${\rm d}l$为线元，并且推导出
+        \begin{equation}
+            \oint_L\bm{B}\cdot{\rm d}\bm{l} = \mu_0\int_S\bm{J}\cdot{\rm d}S
+        \end{equation}
+        上式被称为安培定律或者安培环路定理。\par
+        也可以计算出点电荷的电场的环路积分为零，因此
+        \begin{equation}
+            \oint_L\bm{E}\cdot{\rm d}\bm{l} = 0
+        \end{equation}
+        相对应地有被称为高斯磁定律的
+        \begin{equation}
+            \oint_S\bm{B}\cdot{\rm d}\bm{S} = 0
+        \end{equation}
+        上式说明不存在像电荷一样可以激发磁场的磁单极，目前没有任何实验观察到磁单极的存在。\par
+        根据以上定律可以总结出静电磁学的麦克斯韦方程组
+        \begin{equation}
+            \left\{\begin{array}{l}
+                \oint_S\bm{E}\cdot{\rm d}\bm{S} = \frac{1}{\varepsilon_0}\int_V\rho{\rm d}V\\
+                \oint_L\bm{E}\cdot{\rm d}\bm{l} = 0\\
+                \oint_L\bm{B}\cdot{\rm d}\bm{l} = \mu_0\int_S\bm{J}\cdot{\rm d}S\\
+                \oint_S\bm{B}\cdot{\rm d}\bm{S} = 0
             \end{array}\right.
         \end{equation}
-        式中$\nabla = (\frac{\partial}{\partial x},\frac{\partial}{\partial y},\frac{\partial}{\partial z})$为矢量微分算符，$\bm{E},\bm{B}$分别为电场和磁场，$\varepsilon,\mu$为介电常数和磁导率。\par
-        在真空中介电常数和磁导率表示为$\varepsilon_0$和$\mu_0$，在介质中有：
+        或者利用散度和旋度，改写成微分形式
+        \begin{equation}
+            \left\{\begin{array}{l}
+                \nabla\cdot\bm{E} = \frac{\rho}{\varepsilon_0}\\
+                \nabla\times\bm{E} = 0\\
+                \nabla\times\bm{B} = \mu_0\bm{J}\\
+                \nabla\cdot\bm{B} = 0
+            \end{array}\right.
+        \end{equation}
+        由于电场旋度恒为零，我们可以知道电场可以表示为一个标量场的梯度的形式
+        \begin{equation}
+            \bm{E} = -\nabla\varphi
+        \end{equation}
+        式中$\varphi$被定义为电势，由电荷在电场中做功
+        \begin{equation}
+            W = -q\int_a^b\bm{E}\cdot{\rm d}l = \varphi(b)-\varphi(a)
+        \end{equation}
+        可以知道电荷在电场内$a$点移动$b$点到所做功与路径无关而只与两点电势差有关。
+        静电场与静磁场是相互独立的两种场，但是在电磁场发生变化时，电场与磁场会产生联系。\par
+        法拉第定律是法拉第研究电磁感应时发现的实验定律
+        \begin{equation}
+            \oint_L\bm{E}\cdot{\rm d}\bm{l} = -\frac{{\rm d}}{{\rm d}t}\oint_S\bm{B}\cdot{\rm d}\bm{S}
+        \end{equation}
+        若环路$L$为空间中的一条固定回路，则上式为
+        \begin{equation}
+            \oint_L\bm{E}\cdot{\rm d}\bm{l} = \oint_S\frac{\partial\bm{B}}{\partial t}\cdot{\rm d}\bm{S}
+        \end{equation}
+        对于安培定律，从数学分析可得到
+        \begin{equation}
+            \nabla\cdot\nabla\times\bm{B} = \nabla\cdot\mu\bm{J} = 0
+        \end{equation}
+        恒定电流是闭合的，因此有
+        \begin{equation}
+            \nabla\cdot\mu_0\bm{J} = 0
+        \end{equation}
+        但在一般情况下，我们只能得到\eqref{continuity equation}式，因此安培定律仅适用于静磁学。麦克斯韦在研究时引入了被称为位移电流的新物理量$\bm{J}_D$，与$\bm{J}$构成一个闭合回路，得到新表达式
+        \begin{equation}
+            \nabla\times\bm{B} = \mu_0(\bm{J}+\bm{J}_D)
+        \end{equation}
+        由电流连续性方程和高斯定律可以得到$\bm{J}_D$最简单的表达式
+        \begin{equation}
+            \bm{J}_D = \varepsilon_0\frac{\partial\bm{E}}{\partial t}
+        \end{equation}
+        加入法拉第定律和麦克斯韦修改后的麦克斯韦-安培定律后就可以得到电动力学最重要的麦克斯韦方程组，由四个偏微分方程组成：
+        \begin{equation}\label{Maxwell's equations}
+            \left\{\begin{array}{l}
+                \nabla\times\bm{E} = -\frac{\partial\bm{B}}{\partial t}\\
+                \nabla\times\bm{B} = \mu\bm{J}+\mu\varepsilon\frac{\partial\bm{E}}{\partial t}\\
+                \nabla\cdot\bm{E} = \frac{\rho}{\varepsilon}\\
+                \nabla\cdot\bm{B} = 0
+            \end{array}\right.
+        \end{equation}
+        $\varepsilon,\mu$为介电常数和磁导率。在真空中介电常数和磁导率表示为$\varepsilon_0$和$\mu_0$，在介质中有：
         \begin{equation}
             \begin{array}{c}
-                \bm{D} = \varepsilon \bm{E}\\
-                \bm{B} = \mu \bm{H}
+                \bm{D} = \varepsilon\bm{E}\\
+                \bm{B} = \mu\bm{H}
             \end{array}
         \end{equation}
-        如果将两个旋度表达式表示为分量的形式就会变为八个方程。此外在导电物质中还有欧姆定律：
+        麦克斯韦方程组主要描述了电磁场的性质，而动力学方程主要是牛顿运动定律
         \begin{equation}
-            \bm{J} = \sigma \bm{E}
+            \bm{F} = \frac{{\rm d}\bm{p}}{{\rm d}t}
         \end{equation}
-        式中$\sigma$为电导率。\par
-        麦克斯韦方程组主要描述了电磁场的性质，而动力学主要是牛顿运动方程：
+        式中$\bm{p}$为质点的动量，即牛顿定义质点所受力为质点动量的变化率。\par
+        在经典力学的情况下，质量与速度无关，并且使用牛顿记法用函数符号上方的$n$个点表示其对时间的$n$阶导数，可以化为更常见的形式
         \begin{equation}
-            \bm{F} = m\stackrel{..}{\bm{r}}
+            \bm{F} = m\ddot{\bm{r}}
         \end{equation}
-        式中$F$为质点所受合外力，$m$为质点的惯性质量，$\stackrel{..}{\bm{r}}$为质点矢径对于时间的二阶导数。\par
-        电荷在电磁场中受洛伦兹力的作用：
+        式中$F$为质点所受合外力，$m$为质点的惯性质量，$\ddot{\bm{r}}$为质点矢径对于时间的二阶导数。\par
+        电磁场对电荷的作用可以由洛伦兹力公式得到
         \begin{equation}
             \bm{F} = q(\bm{E}+\bm{v}\times\bm{B})
         \end{equation}
-        式中$q$为电荷量，$\bm{E}$和$\bm{b}$分别为电场和磁场，$\bm{v}$为电荷速度。\par
-        电荷在引力场中受力用万有引力定律描述：
+        式中$\bm{v}$为电荷速度。\par
+        电荷所受基本力中还包含万有引力，可以由万有引力公式的到
         \begin{equation}
-            \bm{G} = G\frac{m_1m_2}{|\vec r|^3}\vec r
+            \bm{G} = G\frac{m_1m_2}{r^3}\bm{r}
         \end{equation}
-        式中$G$为万有引力常数，$m_1,m_2$分别为两个质点的引力质量，$\vec r$为两个质点矢径之差，其模长等于两个质点之间的距离。\par
-        有了这几个公式，从理论上来讲我们可以解决一切的经典物理问题，实际上在19世纪末期科学家们大多是这么乐观地认为的，但还是有一些问题，就是开尔文所谓的“两朵乌云”，之后有了相对论和量子力学。但是对于宏观低速的物体经典力学仍然有相当高的精度。\par
+        式中$G$为万有引力常数，$m_1,m_2$分别为两个质点的引力质量，大量实验证明，惯性质量与引力质量是等价的。$\bm{r}$为两个质点矢径之差，其模长$r$等于两个质点之间的距离。\par
+        有了这几个方程，从理论上来讲我们可以解决一切的经典物理问题，实际上在19世纪末期科学家们大多是这么乐观地认为的，但还是有一些问题，就是开尔文所谓的“两朵乌云”，之后有了相对论和量子力学。但是对于宏观低速的物体经典力学仍然有相当高的精度。\par
         \subsection{数值分析原理}
-        由以上方程可以看出最主要的计算是进行微积分计算和求解微分方程。
+        由以上公式可以看出电动力学最主要的计算是进行微积分计算和求解微分方程，接下来介绍数值计算中需要的数值分析原理。
             \subsubsection{导数}
             微积分中函数的导数定义为：
             \begin{equation}
                 f'(x) = \lim_{h\to 0}\frac{f(x+h)-f(x)}{h}
             \end{equation}
-            数值分析中，我们对微分公式利用泰勒展开进行离散化得到有限差分公式：
-            \begin{equation}\label{eq:1}
-                f'(x) = \frac{f(x+h)-f(x)}{h} - \frac{h}{2}f''(c)
+            根据泰勒中值定理，若函数$f(x+h)$在$x$处具有$n$阶导数，在$U(x)$内，有
+            \begin{equation}\label{Taylor}
+                f(x+h) = \sum_i^nh^n\frac{f^{(n)}(x)}{n!}+R_n(x+h)
             \end{equation}
-            其中$c$是介于$x$和$x+h$间的一个数。\par
-            将\eqref{eq:1}与导数的定义式相比较发现当$h\to 0$时有限差分公式就变成了导数的计算式。尽管在数值计算中不能取$h\to 0$的极限，但是当$h$非常小的时候我们认为
+            式中$R_n(x+h)=o(h^n)$表示$h^n$的高阶无穷小，也被称为佩亚诺余项。此项为$n$次泰勒多项式来近似$f(x+h)$的误差，但其值无法确定，可以改为拉格朗日余项的形式来解决这一问题
+            \begin{equation*}
+                R_n(x+h) = \frac{f^{(n+1)}(\xi)}{(n+1)!}h^{n+1}
+            \end{equation*}
+            式中$\xi$为$(x,x+h)$中的某个值。\par
+            如果仅取泰勒多项式\eqref{Taylor}式的三项得到
+            \begin{equation}
+                f(x+h) = f(x) + hf'(x) + \frac{h^2}{2}f''(\xi)
+            \end{equation}
+            经过移项后可以得到一阶导数的一种有限差分公式：
+            \begin{equation}\label{Two-point forward difference}
+                f'(x) = \frac{f(x+h)-f(x)}{h} - \frac{h}{2}f''(\xi)
+            \end{equation}
+            上式被称为二点前向差分公式。\par
+            将\eqref{Two-point forward difference}式与导数的定义式相比较发现当$h\to 0$时就变成了导数的计算式。尽管在数值计算中不能取$h\to 0$的极限，但是当$h$非常小的时候我们认为
             \begin{equation}
                 f'(x) \approx \frac{f(x+h)-f(x)}{h}
             \end{equation}
-            通过对比我们发现\eqref{eq:1}是用两点的割线代替了切线，也被称为二点前向差分公式，并且把\eqref{eq:1}的最后一项看作误差。由于误差与$h$成正比，因此称\eqref{eq:1}为近似一阶导数的一阶方法。一般地，如果误差是$O(h^n)$，那么我们称该公式为$n$阶方法。\par
-            采取不同形式的泰勒展开，我们也能得到其他的差分公式，如三点中心差分公式：
-            \begin{footnotesize}
-                \begin{equation}
-                    f'(x) = \frac{f(x+h)-f(x-h)}{2h} - \frac{h^2}{6}f'''(c)
-                \end{equation}
-            \end{footnotesize}
-            其中$x-h < c < x+h$。可以看出三点中心差分公式是一个二阶公式。\par
-            对于二阶导数，也有二阶导数的三点中心差分公式：
-            \begin{footnotesize}
-                \begin{equation}
-                    \begin{split}
-                        f''(x) = &\frac{f(x+h)-2f(x)+f(x-h)}{h^2}\\
-                        &-\frac{h^2}{12}f^{(4)}(c)
-                    \end{split}
-                \end{equation}
-            \end{footnotesize}
-            同样地$x-h < c < x+h$。\par
-            我们可以用理查德森外推到$n$阶公式，但在这里不再叙述
+            通过对比我们发现\eqref{Two-point forward difference}式是用两点的割线代替了切线，由于误差$\frac{h}{2}f''(\xi)$与$h$成正比，因此\eqref{Two-point forward difference}式为近似一阶导数的一阶方法。一般地，如果误差为$O(h^n)$，那么我们称该公式为$n$阶方法。\par
+            如果采用更高级的策略，可以得到不同的结果。取泰勒多项式\eqref{Taylor}式中的四项，并且写出$h=-h$时的泰勒多项式
+            \begin{equation*}
+                \begin{array}{l}
+                    f(x+h) = f(x) + hf'(x) + \frac{h^2}{2}f''(x) + \frac{h^3}{6}f'''(\xi_1)\\
+                    f(x-h) = f(x) - hf'(x) + \frac{h^2}{2}f''(x) - \frac{h^3}{6}f'''(\xi_2)
+                \end{array}
+            \end{equation*}
+            将两式相减后可化简得到
+            \begin{equation*}
+                f'(x) = \frac{f(x+h)-f(x-h)}{2h} - \frac{h^2}{12}f'''(\xi_1) - \frac{h^2}{12}f'''(\xi_2)
+            \end{equation*}
+            应用推广介值定理
+            \begin{equation}
+                \sum_i^na_if(\xi) = \sum_i^n(a_if(x_i))
+            \end{equation}
+            可以得到三点中心差分公式
+            \begin{equation*}
+                f'(x) = \frac{f(x+h)-f(x-h)}{2h} - \frac{h^2}{6}f'''(\xi)
+            \end{equation*}
+            由误差项$\frac{h^2}{6}f'''(\xi)$可知三点中心差分公式是一个二阶公式。\par
+            若取泰勒多项式\eqref{Taylor}式中的五项
+            \begin{equation*}
+                \begin{footnotesize}
+                    \begin{array}{l}
+                        f(x+h) = f(x) + hf'(x) + \frac{h^2}{2}f''(x) + \frac{h^3}{6}f'''(x) + \frac{h^4}{24}f'''(\xi)\\
+                        \\
+                        f(x-h) = f(x) - hf'(x) + \frac{h^2}{2}f''(x) - \frac{h^3}{6}f'''(x) + \frac{h^4}{24}f'''(\xi)
+                    \end{array}
+                \end{footnotesize}
+            \end{equation*}
+            将上式相加化简后得到二阶导数的三点中心差分公式：
+            \begin{equation}
+                \begin{split}
+                    f''(x) = &\frac{f(x+h)-2f(x)+f(x-h)}{h^2}\\
+                    &-\frac{h^2}{12}f^{(4)}(\xi)
+                \end{split}
+            \end{equation}
+            上式同样是一个二阶公式。\par
+            我们可以用理查德森外推到$n$阶公式
+            \begin{equation}
+                Q\approx\frac{2^nF(h/2)-F(h)}{2^n-1}
+            \end{equation}
+            相对于$F(h)$，理查德森外推给出对$Q$更高阶的近似。由此我们可以从二阶的三点中心差分公式外推到四阶公式，这将是我们计算中主要使用的方法。
             \subsubsection{定积分}
             若我们将区间$[a,b]$分成$n$个小区间，定义$\lambda = max\{\Delta x_i\}$，定积分的定义如下：
             \begin{equation}
-                \int_{a}^{b}f(x)dx = \lim_{\lambda\to 0}\sum_{i=0}^{n}f(\xi_i)\Delta x_i
+                \int_{a}^{b}f(x){\rm d}x = \lim_{\lambda\to 0}\sum_{i=0}^{n}f(\xi_i)\Delta x_i
             \end{equation}\par
             模仿对导数的操作进行离散化，我们可以用矩形或梯形来计算曲边梯形的面积，显然梯形的近似效果要更好，如此我们得到复合梯形法则：
-            \begin{footnotesize}
-                \begin{equation}
-                    \begin{split}
-                        \int_a^b f(x)dx = &\frac{h}{2}(y_0+y_m+2\sum_{i=1}^{m-1}yx_i)\\
-                        &-\frac{(b-a)h^2}{12}f''(c)
-                    \end{split}
-                \end{equation}
-            \end{footnotesize}
-            其中$h = \frac{(b-a)}{m}$$c$在$x_0$到$x_1$之间，可以看出这是一个二阶方法。\par
+            \begin{equation}
+                \begin{split}
+                    \int_a^b f(x){\rm d}x = &\frac{h}{2}(y_0+y_m+2\sum_{i=1}^{m-1}yx_i)\\
+                    &-\frac{(b-a)h^2}{12}f''(\xi)
+                \end{split}
+            \end{equation}
+            其中$h = \frac{(b-a)}{m}$$\xi$在$x_0$到$x_1$之间，可以看出这是一个二阶方法。\par
             更高阶的有复合辛普森公式，用三点进行抛物线的插值代替了梯形法则中的直线：
-            \begin{footnotesize}
-                \begin{equation}
-                    \begin{split}
-                        \int_a^b f(x)dx = &\frac{h}{3}(y_0+y_{2m}+4\sum_{i=1}^{m}y_{2i-1}\\
-                        &+2\sum_{i=1}^{m-1}y_{2i})\\
-                        &-\frac{(b-a)h^4}{180}f^{(4)}(c)
-                    \end{split}
-                \end{equation}
-            \end{footnotesize}
+            \begin{equation}
+                \begin{split}
+                    \int_a^b f(x){\rm d}x = &\frac{h}{3}(y_0+y_{2m}+4\sum_{i=1}^{m}y_{2i-1}\\
+                    &+2\sum_{i=1}^{m-1}y_{2i})-\frac{(b-a)h^4}{180}f^{(4)}(c)
+                \end{split}
+            \end{equation}
             其中$c$在$x_0$到$x_1$之间，复合辛普森公式是一个四阶方法。\par
             遇到反常积分或瑕积分通常需要在开区间上积分，此时取中点则有复合中点法则：
-            \begin{footnotesize}
-                \begin{equation}
-                    \begin{split}
-                        \int_a^b f(x)dx = &h\sum_{i=1}^{m}f(\omega_i)\\
-                        &+\frac{(b-a)h^2}{24}f''(c)
-                    \end{split}
-                \end{equation}
-            \end{footnotesize}
+            \begin{equation}
+                \int_a^b f(x){\rm d}x = h\sum_{i=1}^{m}f(\omega_i)+\frac{(b-a)h^2}{24}f''(c)
+            \end{equation}
             其中$h = \frac{(b-a)}{m}$$c$在$x_0$到$x_1$之间，$\omega_i$是$[a,b]$中$m$个相等子区间的中点，复合中点法则是三阶方法。\par
             和求导一样，我们也可以利用龙贝格积分外推到$n$阶公式：
-            \begin{footnotesize}
-                \begin{equation}
-                        R_{11} = \frac{h}{2}(f(a)+f(b))
-                \end{equation}
-            \end{footnotesize}
-            \begin{footnotesize}
-                \begin{equation}\label{eq:2}
-                    R_{j1} = \frac{1}{2}R_{i-1,1} + h_j\sum_{i=1}^{2^{j-2}}f(a+(2i-1)h_j)
-                \end{equation}
-            \end{footnotesize}
-            \begin{footnotesize}
-                \begin{equation}\label{eq:3}
-                    R_{jk} = \frac{4^{k-1}R_{j,k-1}-R_{j-1,k-1}}{4^{k-1}-1}
-                \end{equation}
-            \end{footnotesize}
+            \begin{equation}
+                R_{11} = \frac{h}{2}(f(a)+f(b))
+            \end{equation}
+            \begin{equation}\label{eq:2}
+                R_{j1} = \frac{1}{2}R_{i-1,1} + h_j\sum_{i=1}^{2^{j-2}}f(a+(2i-1)h_j)
+            \end{equation}
+            \begin{equation}\label{eq:3}
+                R_{jk} = \frac{4^{k-1}R_{j,k-1}-R_{j-1,k-1}}{4^{k-1}-1}
+            \end{equation}
             只需要不断循环\eqref{eq:2}和\eqref{eq:3}便可以生成一个下三角矩阵，$R_{jj}$的数值对应$2j$阶近似。
             \subsubsection{常微分方程}
             牛顿运动方程是一个二阶常微分方程（Ordinay Differential Equation，简称ODE），只要我们能求解出运动轨迹的方程，就能计算出质点任意时刻的位置、速度、加速度等信息。求解微分方程可以看作在斜率场内顺着斜率画出一条轨迹，但通常这样的轨迹有无数条，因此我们需要一个初始值来确定一条轨迹，这类问题称为初值问题（IVP）。\par
@@ -165,20 +318,18 @@
             \end{equation}
             $\omega_i$是欧拉方法估计的$y_i$值，可以证明欧拉方法是一阶方法，并且函数单调时误差会积累。\par
             只需要对欧拉方法的公式做一个小调整，就可以对精度有很大的提高：
-            \begin{small}
-                \begin{equation}
-                    \begin{split}
-                        \omega_0 =& y_0\\
-                        \omega_{i+1} =& \omega_i + \frac{h}{2}(f(t_i,\omega_i)\\
-                        &+f(t_i+h,\omega_i+hf(ti,\omega_i)))
-                    \end{split}
-                \end{equation}
-            \end{small}
+            \begin{equation}
+                \begin{split}
+                    \omega_0 =& y_0\\
+                    \omega_{i+1} =& \omega_i + \frac{h}{2}(f(t_i,\omega_i)\\
+                    &+f(t_i+h,\omega_i+hf(ti,\omega_i)))
+                \end{split}
+            \end{equation}
             这种方法被称为梯形方法。\par
             由于欧拉方法和梯形方法都可以用旧估计值通过显式公式确定，因此被称为显式方法。也有诸如后向欧拉方法和隐式梯形法等隐式方法，对于一个具体的微分方程可以显化成一个可以迭代的显式表达式，目前不需要使用这些方法，暂时不提。\par
             龙格-库塔方法是一组ODE求解器，包含欧拉方法和梯形方法，以及更复杂的高阶方法。中点方法类似梯形方法，不同的是梯形方法使用区间的右端使用欧拉方法求值，然后与左端取平均值作为斜率；而中点法则使用区间中点的斜率来代替。最常见的龙格-库塔方法是四阶方法（RK4）：
             \begin{equation}
-                    \omega_{i+1} = \omega_i + \frac{h}{6}(s_1+2s_2+2s_3+s_4)
+                \omega_{i+1} = \omega_i + \frac{h}{6}(s_1+2s_2+2s_3+s_4)
             \end{equation}
             其中
             \begin{equation*}
@@ -196,11 +347,9 @@
             \subsubsection{偏微分方程}
             麦克斯韦方程组是一个偏微分方程（Partial Differential Equation，简称PDE）组，和常微分方程有很多不一样的地方。\par
             若以两个变量的偏微分方程举例,二阶线性偏微分方程组可以表示为：
-            \begin{scriptsize}\label{eq:4}
-                \begin{equation}
+            \begin{equation}\label{eq:4}
                     Au_{xx} + Bu_{xy} + Cu_{yy} + F(u_x,u_y,u,x,y) = 0
-                \end{equation}
-            \end{scriptsize}
+            \end{equation}
             其中偏导数使用下标$x$和$y$表示对应的独立变量，$u$表示解。在热方程或波动方程中有一个变量表示时间，我们倾向于称独立变量为$x$和$t$。实际物理问题应该看作一个四维的偏微分方程，四个独立变量分别为$x,y,z,t$，但是如果要绘制成图最多绘制成三维图像，并且用不同颜色来表示该点的数值大小，并且这样绘制出来的图并不适合展示在平面上。因此之后我们求解的偏微分方程至多只有两个独立变量，尽管更高阶的解法同样存在。\par
             根据\eqref{eq:4}中主导阶项，可以按解的性质完全不同而分类如下：\par
             1）$B^2 - 4AC = 0$，抛物线方程\par
@@ -221,16 +370,30 @@
                 \nabla^2 u = f
             \end{equation}
             特别地，当$f=0$，泊松方程退化成拉普拉斯方程，拉普拉斯方程的解称为调和函数。\par
-            泊松方程在物理中有许多应用，也是本次作业之一，其解表示势能。电场$\bm{E}$是电势$\phi$的负梯度：
+            泊松方程在物理中有许多应用，也是本次作业之一，其解表示势能。电场$\bm{E}$是电势$\varphi$的负梯度：
             \begin{equation}
-                \bm{E} = -\nabla\phi
+                \bm{E} = -\nabla\varphi
             \end{equation}
-            再代入麦克斯韦方程组的电场散度式可以得到势能$\phi$的泊松方程：
+            再代入麦克斯韦方程组的电场散度式可以得到势能$\varphi$的泊松方程：
             \begin{equation}
-                \partial^2\phi = -\frac{\rho}{\varepsilon}
+                \partial^2\varphi = -\frac{\rho}{\varepsilon}
             \end{equation}
             重力势能也可以表示为与密度有关的泊松方程，稳态的热分布则可以表示为拉普拉斯方程。\par
             根据作业要求只介绍椭圆方程的PDE求解器。对于椭圆方程，主要是有限差分方法和有限元方法两种方法。有限元分析使用非常广泛，诸如计算流体力学等都有应用，但在这次作业中我只使用了有限差分方法，因此着重介绍有限差分方法。\par
             之前在边值问题中已经使用过有限差分方法了，实际上对于偏微分方程同样适用，而对于二维的椭圆方程，我们就需要在两个方向\par
+    \section{数值计算}
+    根据以上原理，我们可以通过计算机编程来实现数值分析的算法，目前家用计算机计算速度一般在$2GHz\sim4GHz$，即每秒可进行$10^9$次运算，超级计算机更可以达到每秒计算$10^{17}$次数量级，远超于人类，广泛应用于各类科学研究。
+        \subsection{程序与算法实现}
+        目前有许多数值分析软件供科研人员使用，常见的有MATLAB、Mathmatica、Maple等，以上均为开发完成的商业软件。除此之外也可以使用计算机高级语言编写程序，如Python、Julia、Java、R、C++、Fortran等，这些基本都是免费并开源的编程语言，相比与专业商业软件要便宜。\par
+        本次作业均由Python完成，Python有众多的第三方库，在机器学习和数值分析中非常受欢迎，可以在官网免费下载。常用第三方库中，Numpy和Scipy比较适合用于数值分析，Sympy可以进行代数计算，MatPlotLib可以提供和MATLAB相似的绘图功能。\par
+            \subsubsection{数值微积分}
+            \subsubsection{常微分方程}
+            ODE求解器有许多种，其中四阶龙格-库塔法较为常见，也便于程序实现，以下是利用Numpy实现的三种ODE求解器
+            \lstinputlisting[breaklines,language=Python]{ordinary_differential_equation.py}
+            \subsubsection{偏微分方程}
+            利用有限差分方法可以实现定解条件为矩形区域上的狄利克雷边界条件的泊松方程求解器，同样利用Numpy实现
+            \lstinputlisting[breaklines,language=Python]{partial_differential_equations.py}
+        \subsection{数值实验}
+    \section{结论}
 \end{multicols}
 \end{document}
