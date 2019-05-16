@@ -26,7 +26,7 @@ def grad_2D(f,area,step):
     areax,areay = np.arange(area[0,0],area[0,1]+step[0],step[0]),np.arange(area[1,0],area[1,1]+step[1],step[1])
     gradient = np.empty((areax.shape[0],areay.shape[0],2))
     for i in range(areay.shape[0]):
-        gradient[:,i,0] = partials_x(f,areay[i],area[0],step[0])
+        gradient[:,i,0] = partial_x(f,areay[i],area[0],step[0])
     for i in range(areax.shape[0]):
         gradient[i,:,1] = partial_y(f,areax[i],area[1],step[1])
     return gradient
