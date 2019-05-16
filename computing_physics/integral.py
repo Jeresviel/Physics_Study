@@ -170,17 +170,3 @@ ax3.axis("off")
 ax4 = fig1.add_subplot(2,2,4,projection="3d")
 ax4.plot_surface(X,Y,I2[:,:,2])
 plt.show()
-"""
-f = lambda x : np.log(10)*(10**(3*x))
-x = sp.symbols('x')
-g = x**2
-"""
-"""
-f = lambda x : 1 + np.sin(np.exp(3*x))
-t1 = time()
-i1 = self_adaptive_Simpson_origin(f,(-1,1))
-t2 = time()
-i2 = self_adaptive_Simpson(f,(-1,1))
-t3 = time()
-print(t2-t1,t3-t2,i1-i2)#sp.integrate(g,(x,1,10**8)).evalf())
-"""
