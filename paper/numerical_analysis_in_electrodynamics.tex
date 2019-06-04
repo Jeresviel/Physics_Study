@@ -48,7 +48,7 @@
             \bm{F} = q\bm{E}
         \end{equation}
         由库仑定律\eqref{Coulomb_1}式可得到静止点电荷$Q$激发的电场强度为
-        \begin{equation}
+        \begin{equation}\label{Coulomb_2}
             \bm{E} = \frac{Q}{4\pi\varepsilon_0r^3}\bm{r}
         \end{equation}
         由实验得知电场满足叠加原理，如果空间中存在多个点电荷则一点电场强度等于每个电荷单独存在时产生的电场的和
@@ -61,7 +61,7 @@
         \end{equation*}
         式中$\rho$为电荷密度。\par
         根据上式，对整个电荷区域进行积分则得到空间中一点的电场为
-        \begin{equation}\label{Coulomb_2}
+        \begin{equation}\label{Coulomb_3}
             \bm{E}=\frac{1}{4\pi\varepsilon_0}\int_V\frac{\rho\bm{r}}{r^3}{\rm d}V
         \end{equation}
         按照理查德·费恩曼所说，给定了电荷，电场只需要通过计算这一项复杂的三重积分的工作就能得到，“严格说来，是一项计算机的工作！”。\par
@@ -464,7 +464,31 @@
             再考虑电磁场同时存在且恒定的情况。最简单的情况是电场方向与磁场方向平行，这时电场力和磁场力的作用相互独立，运动轨迹应当是一个半径不变的螺旋线
             其他的情况无解析解，但可以进行数值模拟
             \subsubsection{电荷、电场与电势的计算}
-            已知电荷分布可以利用库仑定律求得电场强度,真空中点电荷的电场强度由\eqref{Coulomb_1}得到，
+            已知电荷分布可以利用库仑定律求得电场强度,真空中点电荷的电场强度由\eqref{Coulomb_2}得到，对于连续分布的的情况，可以由\eqref{Coulomb_3}得到。电荷分布、电势分布和电场强度之间相互推导一共有六个公式，首先考虑一维的情况
+            \begin{equation}
+                \left\{\begin{array}{l}
+                    E = \frac{1}{4\pi\varepsilon_0}\int_L\frac{\lambda}{x^2}{\rm d}l\\
+                    E = -\frac{{\rm d}\varphi}{{\rm d}x}\\
+                    \varphi = \frac{1}{4\pi\varepsilon_0}\int_L\frac{\lambda}{x}{\rm d}l\\
+                    \varphi = \int E{\rm d}x\\
+                    \frac{\lambda}{\varepsilon_0} = \frac{{\rm d}E}{{\rm d}x}\\
+                    \frac{\lambda}{\varepsilon_0} = -\frac{{\rm d^2}\varphi}{{\rm d}x^2}
+                \end{array}\right.
+            \end{equation}
+            若真空中的坐标原点有一个点电荷，其电荷量为$q$，则电荷分布为$\lambda = q\delta(x)$，其中$\delta(x)$为狄拉克函数，表示分布只存在于$x = 0$点处，且$\int_{-\infty}^{+\infty}\delta(x){\rm d}x = 1$。由此可得$E = \frac{q}{4\pi\varepsilon_0x^2}$，因此应该是一个负二次幂的幂函数，在原点处场强趋近于无限大，这是因为点电荷的模型在这时候不再成立。下图是数值解与解析解的比较
+
+            二维情况下，三者之间的关系不再是简单的微积分关系，而是偏微分、重积分、曲线积分的关系
+            \begin{equation}
+                \left\{\begin{array}{l}
+                    \bm{E} = \frac{1}{4\pi\varepsilon_0}\int_S\frac{\sigma\bm{r}}{r^3}{\rm d}S\\
+                    \bm{E} = -\nabla\varphi = -\frac{\partial\varphi}{\partial x}\bm{e}_x - \frac{\partial\varphi}{\partial y}\bm{e}_y\\
+                    \varphi = \frac{1}{4\pi\varepsilon_0}\int_S\frac{\sigma}{x}{\rm d}S\\
+                    \varphi = \int\bm{E}\cdot{\rm d}\bm{l}\\
+                    \frac{\sigma}{\varepsilon_0} = \nabla\cdot\bm{E} = \frac{\partial E_x}{\partial x} + \frac{\partial E_y}{\partial y}\\
+                    \frac{\sigma}{\varepsilon_0} = -\nabla^2\varphi = -\frac{\partial^2\varphi}{\partial x^2} - \frac{\partial^2\varphi}{\partial y^2}
+                \end{array}\right.
+            \end{equation}
+
     \section{结论}
 \end{multicols}
 \end{document}
